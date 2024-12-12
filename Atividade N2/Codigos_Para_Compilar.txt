@@ -1,0 +1,3 @@
+nasm -f elf64 AtividadeN2_Main.asm && nasm -f elf64 AtividadeN2_Libs.asm
+ld AtividadeN2_Main.o  AtividadeN2_Libs.o -o exec
+./exec

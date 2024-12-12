@@ -1,0 +1,520 @@
+%\documentclass[12pt, openany,oneside, a4paper, oldfontcommands]{abntex2}
+%\documentclass[12pt, openright, twoside, a4paper, brazil]{abntex2}
+\documentclass[12pt, openany, oneside, a4paper, brazil]{abntex2}
+\usepackage[brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage{microtype}
+%\usepackage{lmodern}
+\usepackage{mathptmx} % Define a fonte Times para texto e matemática
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{minted}
+\usepackage{xcolor}
+\usepackage{subfig}
+\usepackage[num]{abntex2cite}
+\usepackage{hyperref}
+\usepackage{fancyhdr} % Pacote para cabeçalhos e rodapés personalizados
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines=true, commandchars=\\\{\}}
+\definecolor{bgcolor}{RGB}{45,45,48} 
+\usemintedstyle{paraiso-dark}
+
+
+\begin{document} 
+	%\frontmatter
+	\begin{center}
+		\vspace*{-3cm}
+		\includegraphics[width=0.4\textwidth]{puc_go}\\[0.5cm]
+		\textbf{PONTIFÍCIA UNIVERSIDADE CATÓLICA DE GOIÁS}\\
+		ESCOLA POLITÉCNICA E DE ARTES\\
+		ENGENHARIA DE COMPUTAÇÃO\\[2cm]
+		
+		%\vspace{2cm}
+		\MakeUppercase{Lucas Pereira Nunes}\\
+		\MakeUppercase{Gabriel Derrel Martins Santee}\\[6cm]
+		%\vspace{5cm}
+		
+		{\ABNTEXchapterfont\bfseries\Large \MakeUppercase{Atividade N2\\Adição de dois números}}\\[3cm]
+		
+		%\vspace{7.85cm}
+		\vfill
+		GOIÂNIA\\
+		2024
+		
+	\end{center}
+	
+	%\newpage
+	%\null
+	\newpage
+	
+	\pdfbookmark[0]{\contentsname}{toc}
+	\tableofcontents*
+	\cleardoublepage
+	
+	\chapter*[Resposta]{}
+	\addtocontents{toc}{\protect\renewcommand{\protect\chapter}[1]{}}
+	%\chapter*{}
+	\newpage
+	\textual
+	%\mainmatter
+	%\pagenumbering{arabic}  % Define numeração em algarismos arábicos
+	\setcounter{page}{1}
+	\section*{Código}
+	\addcontentsline{toc}{section}{\textbf{1 - Código}}
+	Arquivo AtividadeN2\_Main.asm
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		section .data
+		msg1 db "Insira o primeiro numero: "
+		msg1_len equ $ - msg1
+		msg2 db "Insira o segundo numero: "
+		msg2_len equ $ - msg2
+		msg_resultado db "Soma: "
+		msg_resultado_len equ $ - msg_resultado
+		pular_linha_str db 10,10
+		pular_linha_len equ $ - pular_linha_str
+		buffer1 db 10 ; String do primeiro número
+		buffer2 db 10 ; String do segundo número
+		buffer_soma db 10 ; String da soma
+		buffer_len equ 10 ; Tamanho máximo do buffer
+		
+		section .bss
+		verificar_erro resb 1 ; Byte que verifica se tem algum erro
+		
+		section .text
+		global _start
+		extern print_msg, read_msg, atoi, itoa, pularlinha
+		global buffer_len, pular_linha_str, pular_linha_len, verificar_erro
+		_start:
+		; SYSCALL WRITE 1: "Insira o primeiro numero:"
+		leitura1:
+		mov byte [verificar_erro], 0 ; Zera o verificador de erro
+		
+		push 4                      ; syscall number para sys_write por pilha
+		push 1                      ; file descriptor 1 (stdout) por pilha
+		push msg1                   ; endereço da mensagem de prompt por pilha
+		push msg1_len               ; tamanho da mensagem de prompt por pilha
+		call print_msg              ; chamada da função de impressão de mensagem
+		; "Insira o primeiro numero:"
+		
+		; limpando a pilha
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		
+		; SYSCALL READ 1
+		mov rcx, buffer1            ; aponta para o buffer do primeiro número
+		call read_msg               ; chamada da função de leitura da entrada
+		
+		; Converte string para número inteiro
+		mov rsi, buffer1            ; apontando para o início da string do primeiro número
+		xor rax, rax                ; zera o valor acumulador(neste caso rax é o acumulador)
+		xor rcx, rcx                ; contador de dígitos lidos
+		call atoi                   ; chamada da função atoi (ascii para inteiro)
+		cmp byte [verificar_erro], 1 ; verifica se tem algum erro
+		je leitura1                  ; se tiver erro, volta para leitura1
+		push rax             ; armazena o resultado em num1
+		
+		; SYSCALL WRITE 2: "Insira o segundo numero:"
+		leitura2:
+		mov byte [verificar_erro], 0 ; Zera o verificador de erro
+		
+		push 4                      ; syscall number para sys_write por pilha
+		push 1                      ; file descriptor 1 (stdout) por pilha
+		push msg2                   ; endereço da mensagem de prompt por pilha
+		push msg2_len               ; tamanho da mensagem de prompt por pilha
+		call print_msg              ; chamada da função de impressão de mensagem
+		; "Insira o segundo numero:"
+		
+		; limpando a pilha
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		
+		; SYSCALL READ 2
+		mov rcx, buffer2            ; aponta para o buffer da entrada
+		call read_msg               ; chamada da função de leitura da entrada
+		
+		; Converte string para número inteiro
+		mov rsi, buffer2            ; apontando para o início do buffer
+		xor rax, rax                ; zera o valor acumulador
+		xor rcx, rcx                ; contador de dígitos lidos
+		call atoi                   ; chamada da função atoi (ascii para inteiro)
+		cmp byte [verificar_erro], 1 ; verifica se tem algum erro
+		je leitura2                  ; se tiver erro, volta para leitura2
+		
+		; Soma dos dois números
+		pop rbx                     ; pegar o valor de num1 da pilha
+		add rax, rbx                ; soma os dois valores
+		
+		; Converte o resultado da soma(que agora está em rax) de volta para string
+		mov rbx, rax                ; copia o valor da soma para rbx
+		mov rdi, buffer_soma        ; guarda o inicio da string buffer_soma
+		add rdi, buffer_len         ; faz o ponteiro rdi apontar para o final da string buffer_soma
+		call itoa                   ; chamada da função itoa (inteiro para ascii)
+		
+		; Exibe "Soma: "
+		push 4                  ; syscall number for sys_write
+		push 1                  ; file descriptor 1 (stdout)
+		push msg_resultado      ; endereço da mensagem de resultado
+		push msg_resultado_len  ; tamanho da mensagem de resultado
+		call print_msg                    ; chamada de sistema para escrever "Soma: "
+		
+		; limpando a pilha
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		
+		; Exibe o número convertido para string
+		push 4                  ; syscall number for sys_write
+		push 1                  ; file descriptor 1 (stdout)
+		push rdi                ; aponta para o início do número no buffer
+		push buffer_len         ; tamanho máximo (exibe até o '\0')
+		call print_msg                    ; chamada de sistema para escrever o número
+		
+		; limpando a pilha
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		
+		; Exibe uma quebra de linha
+		call pularlinha
+		
+		Fim:
+		mov rax, 1                  ; Syscall number para sys_exit
+		xor rbx, rbx                ; código de saída 0
+		int 0x80                    ; chamada de sistema para sair
+	\end{minted}
+	
+	Arquivo AtividadeN2\_Libs.asm
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		global print_msg, read_msg, atoi, itoa, pularlinha
+		extern buffer_len, pular_linha_str, pular_linha_len, verificar_erro
+		
+		print_msg:
+		push rbp                    ; coloca rbp no topo da pilha
+		mov rbp, rsp                ; rbp e rsp representam o topo da pilha
+		mov rdx, [rbp + 16]          ; acessa 8 bytes abaixo da pilha para acessar o valor pressuposto para rdx
+		mov rcx, [rbp + 24]         ; valor pressuposto para rcx
+		mov rbx, [rbp + 32]         ; valor pressuposto para rbx
+		mov rax, [rbp + 40]         ; valor pressuposto para rax
+		int 0x80                    ; chamada de sistema para imprimir
+		pop rbp                     ; retira rbp da pilha e rsp volta a ser o unico topo da pilha
+		ret
+		
+		read_msg:
+		mov rax, 3                  ; syscall number para sys_read
+		mov rbx, 0                  ; file descriptor 0 (stdin)
+		mov rdx, buffer_len         ; tamanho do buffer
+		int 0x80                    ; chamada de sistema para ler a string
+		ret
+		
+		atoi:
+		movzx rbx, byte [rsi]       ; carrega o próximo caractere
+		cmp rbx, 10                 ; verifica se é '\0' (final da string)
+		je finish_conversion
+		; verifica se o caractere é um dígito válido
+		cmp rbx, '0'
+		jb erro                     ; verifica se é menor que '0'
+		cmp rbx, '9'
+		ja erro                     ; verifica se é maior que '9'
+		sub rbx, '0'                ; converte caractere ASCII para número
+		
+		imul rax, rax, 10           ; multiplica o valor atual por 10
+		add rax, rbx                ; adiciona o dígito convertido
+		inc rsi                     ; incrementa para ir para o próximo caractere
+		jmp atoi
+		; O número convertido está em rax
+		finish_conversion:
+		ret
+		erro:
+		mov byte [verificar_erro], 1
+		ret
+		
+		itoa:
+		dec rdi                     ; avança para o próximo caractere (de trás para frente)
+		mov rax, rbx                ; armazena o valor do quociente(rbx) atual em rax
+		mov rdx, 0                  ; zera o registrador rdx, será usado para o resto da divisão
+		mov rcx, 10                 ; seta o divisor, ou seja, qual base(10 nesste caso)
+		div rcx                     ; divide rax por 10
+		add dl, '0'                 ; converte o resto para ASCII
+		mov [rdi], dl               ; armazena na string
+		mov rbx, rax                ; armazena o quociente para a próxima iteração
+		test rbx, rbx               ; verifica se o valor é 0
+		jnz itoa
+		ret
+		
+		pularlinha:
+		push 4                      ; syscall number para sys_write
+		push 1                      ; file descriptor 1 (stdout)
+		push pular_linha_str         ; endereço da mensagem de prompt por pilha
+		push pular_linha_len         ; tamanho da mensagem de prompt por pilha
+		call print_msg              ; chamada da função de impressão de mensagem
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		ret
+	\end{minted}
+	
+	\section*{Explicação do Código}
+	\addcontentsline{toc}{section}{\textbf{2 - Explicação do Código}}
+	
+	\subsection*{Arquivo AtividadeN2\_Libs.asm}
+	\addcontentsline{toc}{subsection}{\textbf{2.1 - Arquivo AtividadeN2\_Libs.asm}}
+	
+	O seguinte trecho é responsável por definir quais funções estão no arquivo atual e quais variáveis estão em um arquivo externo.
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		global print_msg, read_msg, atoi, itoa, pularlinha
+		extern buffer_len, pular_linha_str, pular_linha_len, verificar_erro
+	\end{minted}
+	
+	O seguinte trecho define a função responsável por imprimir uma string na tela. Primeiramente colocamos o valor da base da pilha na pilha, isso é necessário pois no passo seguinte o valor do topo da pilha é movido para rsb, isso é feito para termos um ponto fixo onde podemos acessar os valores salvos na pilha.
+	
+	\noindent Para acessar os valores da pilha fazemos uma aritmética de ponteiro, pegamos da partir de 16 pois queremos os valores a partir da terceira posição, já que a primeira posição guarda o valor da base da pilha e a segunda guarda o endereço de retorno.
+	Após passar os valores necessários para os registradores, fazemos a chamada ao sistema, ao chamar o sistema a String será impressa na tela.
+	
+	\noindent Depois disso, resgatamos o valor da base da pilha de volta para o registrador rbp e damos o retorno.
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		print_msg:
+		push rbp                    ; coloca rbp no topo da pilha
+		mov rbp, rsp                ; rbp e rsp representam o topo da pilha
+		mov rdx, [rbp + 16]          ; acessa 8 bytes abaixo da pilha para acessar o valor pressuposto para rdx
+		mov rcx, [rbp + 24]         ; valor pressuposto para rcx
+		mov rbx, [rbp + 32]         ; valor pressuposto para rbx
+		mov rax, [rbp + 40]         ; valor pressuposto para rax
+		int 0x80                    ; chamada de sistema para imprimir
+		pop rbp                     ; retira rbp da pilha e rsp volta a ser o unico topo da pilha
+		ret
+	\end{minted}
+	
+	O seguinte trecho é responsável por ler uma String do teclado, buffer\_len é uma macro definida em outro arquivo e a string que receberá o que foi lido está foi passada antes de chamar a função. 
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		read_msg:
+		mov rax, 3                  ; syscall number para sys_read
+		mov rbx, 0                  ; file descriptor 0 (stdin)
+		mov rdx, buffer_len         ; tamanho do buffer
+		int 0x80                    ; chamada de sistema para ler a string
+		ret
+	\end{minted}
+	
+	O seguinte trecho é responsável por converter um número em ASCII para um número inteiro. O registrador rsi guarda o endereço da string a ser convertida, movemos o caractere atual para o registrador rbx utilizando o movzx(nstrução utilizada para mover dados de um registrador para outro registrador, expandindo o valor original com zeros para preenchê-lo totalmente no registrador de destino).
+	
+	\noindent Agora verificamos se o caractere está entre '0' e '9', se estiver o código continua, senão pula para a label erro, seta a variável de verificação de erro como 1 sai.
+	Após passar pela verificação, subtraimos '0' do caractere para obter o seu valor inteiro, após isso multicamos rax por 10(rax é um acumulador), após isso adicionamos ao acumulador o caractere convertido e passamos para o próximo caractere.
+	
+	\noindent Portanto, digamos que queremos converter a string "123", os valores de rax serão: rax=0, rax=1, rax=10, rax=12, rax=120, rax=123.
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		atoi:
+		movzx rbx, byte [rsi]       ; carrega o próximo caractere
+		cmp rbx, 10                 ; verifica se é '\0' (final da string)
+		je finish_conversion
+		; verifica se o caractere é um dígito válido
+		cmp rbx, '0'
+		jb erro                     ; verifica se é menor que '0'
+		cmp rbx, '9'
+		ja erro                     ; verifica se é maior que '9'
+		sub rbx, '0'                ; converte caractere ASCII para número
+		
+		imul rax, rax, 10           ; multiplica o valor atual por 10
+		add rax, rbx                ; adiciona o dígito convertido
+		inc rsi                     ; incrementa para ir para o próximo caractere
+		jmp atoi
+		; O número convertido está em rax
+		finish_conversion:
+		ret
+		erro:
+		mov byte [verificar_erro], 1
+		ret
+	\end{minted}
+	
+	O seguinte trecho é responsável por converter um inteiro para uma string. O algorítmo funciona da seguinte forma, rdi guarda a ultima posição da string de destino, isso é necessário pois a inclusão dos caracteres ocorre na ordem inversa, após irmos para a posição anterior, guardamos o quociente anterior(em rbx) em rax, caso seja a primeira iteração o quociente será o inteiro a ser convertido, zeramos o registrador que guardará o resto(rdx) e salvamos a base de converção(nesse caso base 10) em rcx.
+	
+	\noindent Dividimos rax por rcx e o resultado será guardado em dois registradores, rax(quociente) e rdx(resto), adicionamos '0' ao resto para converte-lo para ASCII e o salvamos o caractere convertido para a posição atual da string; salvamos o quociente em rbx para a próxima iteração. Agora testamos se o quociente é 0, se for a converção terminou, senão a converção continua. 
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		itoa:
+		dec rdi                     ; avança para o próximo caractere (de trás para frente)
+		mov rax, rbx                ; armazena o valor do quociente(rbx) atual em rax
+		mov rdx, 0                  ; zera o registrador rdx, será usado para o resto da divisão
+		mov rcx, 10                 ; seta o divisor, ou seja, qual base(10 nesste caso)
+		div rcx                     ; divide rax por 10
+		add dl, '0'                 ; converte o resto para ASCII
+		mov [rdi], dl               ; armazena na string
+		mov rbx, rax                ; armazena o quociente para a próxima iteração
+		test rbx, rbx               ; verifica se o valor é 0
+		jnz itoa
+		ret
+	\end{minted}
+	
+	O seguinte trecho é responsável pela quebra de linha, para isso imprimimos a string pular\_linha\_str passando os valores pela pilha e chamando a função se imprimir uma mensagem na tela.
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		pularlinha:
+		push 4                      ; syscall number para sys_write
+		push 1                      ; file descriptor 1 (stdout)
+		push pular_linha_str         ; endereço da mensagem de prompt por pilha
+		push pular_linha_len         ; tamanho da mensagem de prompt por pilha
+		call print_msg              ; chamada da função de impressão de mensagem
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		ret
+	\end{minted}
+	
+	\subsection*{Arquivo AtividadeN2\_Main.asm}
+	\addcontentsline{toc}{subsection}{\textbf{2.2 - Arquivo AtividadeN2\_Main.asm}}
+	
+	O Seguinte trecho é responsável por definir as variáveis e definir quais são as variáveis globais e quais são as funções externas.
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		section .data
+		msg1 db "Insira o primeiro numero: "
+		msg1_len equ $ - msg1
+		msg2 db "Insira o segundo numero: "
+		msg2_len equ $ - msg2
+		msg_resultado db "Soma: "
+		msg_resultado_len equ $ - msg_resultado
+		pular_linha_str db 10,10
+		pular_linha_len equ $ - pular_linha_str
+		buffer1 db 10 ; String do primeiro número
+		buffer2 db 10 ; String do segundo número
+		buffer_soma db 10 ; String da soma
+		buffer_len equ 10 ; Tamanho máximo do buffer
+		
+		section .bss
+		verificar_erro resb 1 ; Byte que verifica se tem algum erro
+		
+		section .text
+		global _start
+		extern print_msg, read_msg, atoi, itoa, pularlinha
+		global buffer_len, pular_linha_str, pular_linha_len, verificar_erro
+	\end{minted}
+	
+	No seguinte trecho, o comportamento de leitura1 e de leitura2 é identico, zerando o verificador de erro, imprimindo msg1 pela função externa print\_msg, lendo uma String do usuário pela função externa read\_msg passando a string que guardará o que foi digitado para a função pelo registrador rcx, e convertendo a string lida chamando a função externa atoi.
+	
+	\noindent Caso haja um erro, a lógica de leitura será recomaçada, ou seja, caso em leitura1 a string seja inválida, o primeiro número será pedido de novo.
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		; SYSCALL WRITE 1: "Insira o primeiro numero:"
+		leitura1:
+		mov byte [verificar_erro], 0 ; Zera o verificador de erro
+		
+		push 4                      ; syscall number para sys_write por pilha
+		push 1                      ; file descriptor 1 (stdout) por pilha
+		push msg1                   ; endereço da mensagem de prompt por pilha
+		push msg1_len               ; tamanho da mensagem de prompt por pilha
+		call print_msg              ; chamada da função de impressão de mensagem
+		; "Insira o primeiro numero:"
+		
+		; limpando a pilha
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		
+		; SYSCALL READ 1
+		mov rcx, buffer1            ; aponta para o buffer do primeiro número
+		call read_msg               ; chamada da função de leitura da entrada
+		
+		; Converte string para número inteiro
+		mov rsi, buffer1            ; apontando para o início da string do primeiro número
+		xor rax, rax                ; zera o valor acumulador(neste caso rax é o acumulador)
+		xor rcx, rcx                ; contador de dígitos lidos
+		call atoi                   ; chamada da função atoi (ascii para inteiro)
+		cmp byte [verificar_erro], 1 ; verifica se tem algum erro
+		je leitura1                  ; se tiver erro, volta para leitura1
+		push rax             ; armazena o resultado em num1
+		
+		; SYSCALL WRITE 2: "Insira o segundo numero:"
+		leitura2:
+		mov byte [verificar_erro], 0 ; Zera o verificador de erro
+		
+		push 4                      ; syscall number para sys_write por pilha
+		push 1                      ; file descriptor 1 (stdout) por pilha
+		push msg2                   ; endereço da mensagem de prompt por pilha
+		push msg2_len               ; tamanho da mensagem de prompt por pilha
+		call print_msg              ; chamada da função de impressão de mensagem
+		; "Insira o segundo numero:"
+		
+		; limpando a pilha
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		
+		; SYSCALL READ 2
+		mov rcx, buffer2            ; aponta para o buffer da entrada
+		call read_msg               ; chamada da função de leitura da entrada
+		
+		; Converte string para número inteiro
+		mov rsi, buffer2            ; apontando para o início do buffer
+		xor rax, rax                ; zera o valor acumulador
+		xor rcx, rcx                ; contador de dígitos lidos
+		call atoi                   ; chamada da função atoi (ascii para inteiro)
+		cmp byte [verificar_erro], 1 ; verifica se tem algum erro
+		je leitura2                  ; se tiver erro, volta para leitura2
+	\end{minted}
+	
+	O seguinte trecho é responsável por somar os 2 números e converter a soma para string chamando a função externa itoa.
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		; Soma dos dois números
+		pop rbx                     ; pegar o valor de num1 da pilha
+		add rax, rbx                ; soma os dois valores
+		
+		; Converte o resultado da soma(que agora está em rax) de volta para string
+		mov rbx, rax                ; copia o valor da soma para rbx
+		mov rdi, buffer_soma        ; guarda o inicio da string buffer_soma
+		add rdi, buffer_len         ; faz o ponteiro rdi apontar para o final da string buffer_soma
+		call itoa                   ; chamada da função itoa (inteiro para ascii)
+	\end{minted}
+	
+	O seguinte trecho imprime a string convertida e encerra o programa. O registrador rdi é passado ao invés de buffer\_soma pois não necessáriamente o inicio da variável é o inicío da string so número convertido, visto que a inclusão caracteres em buffer\_soma ocorre de trás pra frente.
+	
+	\begin{minted}[linenos, breaklines, frame=single, fontsize=\small, tabsize=4, bgcolor=bgcolor]{nasm}
+		; Exibe "Soma: "
+		push 4                  ; syscall number for sys_write
+		push 1                  ; file descriptor 1 (stdout)
+		push msg_resultado      ; endereço da mensagem de resultado
+		push msg_resultado_len  ; tamanho da mensagem de resultado
+		call print_msg                    ; chamada de sistema para escrever "Soma: "
+		
+		; limpando a pilha
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		
+		; Exibe o número convertido para string
+		push 4                  ; syscall number for sys_write
+		push 1                  ; file descriptor 1 (stdout)
+		push rdi                ; aponta para o início do número no buffer
+		push buffer_len         ; tamanho máximo (exibe até o '\0')
+		call print_msg                    ; chamada de sistema para escrever o número
+		
+		; limpando a pilha
+		pop rax
+		pop rax
+		pop rax
+		pop rax
+		
+		; Exibe uma quebra de linha
+		call pularlinha
+		
+		Fim:
+		mov rax, 1                  ; Syscall number para sys_exit
+		xor rbx, rbx                ; código de saída 0
+		int 0x80                    ; chamada de sistema para sair
+	\end{minted}
+	
+\end{document}
